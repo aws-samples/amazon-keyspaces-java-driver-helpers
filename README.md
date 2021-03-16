@@ -12,8 +12,6 @@ The Amazon Keyspaces Retry Policy is an alternative to the DefaultRetryPolicy fo
 The following code shows how to include the  AmazonKeyspacesRetryPolicy to existing configuration
 
 ```
-#Set idempotence for all operations you application can change on request
-basic.request.default-idempotence = true
    advanced.retry-policy {
      class =  com.aws.ssa.keyspaces.retry.AmazonKeyspacesRetryPolicy
      max-attempts = 3
