@@ -1,5 +1,6 @@
 package com.aws.ssa.keyspaces.retry;
 
+import com.aws.ssa.keyspaces.retry.KeyspacesRetryOption;
 import org.junit.Assert;
 import org.junit.Test;
 

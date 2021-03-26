@@ -105,13 +105,10 @@ public class AmazonKeyspacesRetryPolicy implements RetryPolicy {
             boolean dataPresent,
             int retryCount) {
 
-
         RetryDecision decision = determineRetryDecision(retryCount);
 
-        if (LOG.isTraceEnabled() && (decision == RetryDecision.RETRY_SAME || decision == RetryDecision.RETHROW)) {
-            LOG.trace(RETRYING_ON_READ_TIMEOUT, logPrefix, cl, blockFor, received, false, retryCount);
-        }
-
+        LOG.trace(RETRYING_ON_READ_TIMEOUT, logPrefix, cl, blockFor, received, false, retryCount);
+        
         return decision;
 
     }
@@ -133,12 +130,10 @@ public class AmazonKeyspacesRetryPolicy implements RetryPolicy {
             int received,
             int retryCount) {
 
-
         RetryDecision decision = determineRetryDecision(retryCount);
 
-        if (LOG.isTraceEnabled() && (decision == RetryDecision.RETRY_SAME || decision == RetryDecision.RETHROW)) {
-            LOG.trace(RETRYING_ON_WRITE_TIMEOUT, logPrefix, cl, blockFor, received, false, retryCount);
-        }
+        LOG.trace(RETRYING_ON_WRITE_TIMEOUT, logPrefix, cl, blockFor, received, false, retryCount);
+
 
         return decision;
     }
@@ -160,9 +155,8 @@ public class AmazonKeyspacesRetryPolicy implements RetryPolicy {
 
         RetryDecision decision = determineRetryDecision(retryCount);
 
-        if (LOG.isTraceEnabled() && (decision == RetryDecision.RETRY_SAME || decision == RetryDecision.RETHROW)) {
-            LOG.trace(RETRYING_ON_UNAVAILABLE, logPrefix, cl, required, alive, retryCount);
-        }
+        LOG.trace(RETRYING_ON_UNAVAILABLE, logPrefix, cl, required, alive, retryCount);
+
 
         return decision;
     }
@@ -175,11 +169,11 @@ public class AmazonKeyspacesRetryPolicy implements RetryPolicy {
     @Override
     public RetryDecision onRequestAborted(
             @NonNull Request request, @NonNull Throwable error, int retryCount) {
+
         RetryDecision decision = determineRetryDecision(retryCount);
 
-        if (LOG.isTraceEnabled() && (decision == RetryDecision.RETRY_SAME || decision == RetryDecision.RETHROW)) {
-            LOG.trace(RETRYING_ON_ABORTED, logPrefix, retryCount, error);
-        }
+        LOG.trace(RETRYING_ON_ABORTED, logPrefix, retryCount, error);
+
 
         return decision;
     }
@@ -193,12 +187,9 @@ public class AmazonKeyspacesRetryPolicy implements RetryPolicy {
     public RetryDecision onErrorResponse(
             @NonNull Request request, @NonNull CoordinatorException error, int retryCount) {
 
-
         RetryDecision decision = determineRetryDecision(retryCount);
 
-        if (LOG.isTraceEnabled() && (decision == RetryDecision.RETRY_SAME || decision == RetryDecision.RETHROW)) {
-            LOG.trace(RETRYING_ON_ERROR, logPrefix, retryCount, error);
-        }
+        LOG.trace(RETRYING_ON_ERROR, logPrefix, retryCount, error);
 
         return decision;
     }

@@ -13,8 +13,14 @@
         <appender-ref ref="STDOUT" />
     </root>
 
-        <logger name="com.aws.ssa.keyspaces.retry.AmazonKeyspacesRetryPolicy" level="TRACE" additivity="false">
-            <appender-ref ref="STDOUT" />
-        </logger>
+    <logger name="com.aws.ssa.keyspaces.retry.AmazonKeyspacesRetryPolicy" level="TRACE" additivity="false">
+        <appender-ref ref="STDOUT" />
+    </logger>
+    <logger name="com.aws.ssa.keyspaces.throttler.AmazonKeyspacesFixedRateThrottler" level="DEBUG" additivity="false">
+        <appender-ref ref="STDOUT" />
+    </logger>
+    <logger name="com.aws.ssa.keyspaces.throttler.AmazonKeyspacesBlockingFIxedRateThrottler" level="DEBUG" additivity="false">
+        <appender-ref ref="STDOUT" />
+    </logger>
 
     </configuration>

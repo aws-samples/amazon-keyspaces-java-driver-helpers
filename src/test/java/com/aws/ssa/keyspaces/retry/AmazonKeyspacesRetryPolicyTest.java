@@ -1,6 +1,8 @@
 package com.aws.ssa.keyspaces.retry;
 
 
+import com.aws.ssa.keyspaces.retry.AmazonKeyspacesRetryPolicy;
+import com.aws.ssa.keyspaces.retry.KeyspacesRetryOption;
 import com.datastax.oss.driver.api.core.ConsistencyLevel;
 import com.datastax.oss.driver.api.core.config.DriverConfigLoader;
 import com.datastax.oss.driver.api.core.context.DriverContext;
