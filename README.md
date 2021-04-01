@@ -58,6 +58,19 @@ To build and use this library execute the following mvn command and place on the
 ```
 mvn clean package
 ```
+
+# Popular Keyspaces Repositories
+
+## Developer Tooling
+This repository provides a Docker image for common tooling for Amazon Keyspaces. Keyspaces for functional testing, light operations, and data migration.
+The toolkit is optimized for Amazon Keyspaces, but will also work with Apache Cassandra clusters.
+https://github.com/aws-samples/amazon-keyspaces-toolkit
+
+## Monitoring
+This repository provides CloudFormation templates to quickly set up CloudWatch Metrics for Amazon Keyspaces. Using this template will allow you to get started more easily by providing deployable prebuilt CloudWatch dashboards with commonly observed metrics.
+https://github.com/aws-samples/amazon-keyspaces-cloudwatch-cloudformation-templates
+
+
 # Security
 
 See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information.
