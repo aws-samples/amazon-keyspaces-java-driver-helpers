@@ -40,7 +40,7 @@ To activate this throttler, modify the {@code advanced.throttler} section in the
          advanced.throttler = {
                 class = com.aws.ssa.keyspaces.throttler.AmazonKeyspacesFixedRateThrottler
                 max-requests-per-second = 1000
-                endpoint-type = VPC
+                number-of-hosts = 3
                 register-timeout = 1 seconds
           }
       }  
@@ -49,7 +49,7 @@ To activate this throttler, modify the {@code advanced.throttler} section in the
 
 
 * `max-requests-per-second` : controls the request rate. Blocks until available permits or timeout it reached
-* `endpoint-type` : if you are connected to the VPC endpoint or the public endpoint. Used to determine throughput based on the number of connections specified in:`advanced.connection.pool.local.size`
+* `number-of-hosts` : The number of hosts in the system.peers table.  Depending on the endpoint type and region the number of hosts in the system.peers table may be different. This number is Used to validate throughput based on the number of connections specified in:`advanced.connection.pool.local.size`
 * `register-timeout` timeout waiting for permits. Should be less than or equal to `basic.request.timeout'
 
 

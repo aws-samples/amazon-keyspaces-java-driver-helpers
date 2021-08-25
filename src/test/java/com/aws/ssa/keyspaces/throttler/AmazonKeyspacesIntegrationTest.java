@@ -1,9 +1,9 @@
 package com.aws.ssa.keyspaces.throttler;
 
+import com.datastax.oss.driver.api.core.ConsistencyLevel;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.config.DriverConfigLoader;
-import com.datastax.oss.driver.api.core.cql.PreparedStatement;
-import com.datastax.oss.driver.api.core.cql.ResultSet;
+import com.datastax.oss.driver.api.core.cql.*;
 import com.datastax.oss.driver.shaded.guava.common.util.concurrent.RateLimiter;
 import io.netty.util.internal.ThreadLocalRandom;
 import com.datastax.oss.driver.shaded.guava.common.base.Stopwatch;
@@ -31,6 +31,8 @@ public class AmazonKeyspacesIntegrationTest {
 
         PreparedStatement statement = session.prepare("insert into tlp_stress.map_stress(id,data)VALUES(?, ?)");
 
+        PreparedStatement rd = session.prepare("SELECT * FROM tlp_stress.map_stress where id = ?");
+
         int mapsize = 2;
         long size = 0;
         Map data = new HashMap(mapsize);
@@ -47,6 +49,11 @@ public class AmazonKeyspacesIntegrationTest {
 
         Stopwatch stopwatch = Stopwatch.createStarted();
 
+        ResultSet resultSet = session.execute(rd.bind("8552296878058997004").setConsistencyLevel(ConsistencyLevel.LOCAL_ONE));
+
+       System.out.println(resultSet.one().getString(0));
+
+
         while(stopwatch.elapsed().toMillis() < 5*60*1000){
             String id = "" +  ThreadLocalRandom.current().nextLong();
 
@@ -54,6 +61,8 @@ public class AmazonKeyspacesIntegrationTest {
 
             CompletableFuture.supplyAsync(() -> session.execute(statement.bind(id,data)));
         }
+
+
 
         limiter.setRate(10000);
 

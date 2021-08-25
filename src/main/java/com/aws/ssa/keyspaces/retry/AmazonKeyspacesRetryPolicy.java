@@ -134,7 +134,6 @@ public class AmazonKeyspacesRetryPolicy implements RetryPolicy {
 
         LOG.trace(RETRYING_ON_WRITE_TIMEOUT, logPrefix, cl, blockFor, received, false, retryCount);
 
-
         return decision;
     }
 
@@ -157,7 +156,6 @@ public class AmazonKeyspacesRetryPolicy implements RetryPolicy {
 
         LOG.trace(RETRYING_ON_UNAVAILABLE, logPrefix, cl, required, alive, retryCount);
 
-
         return decision;
     }
 
@@ -173,7 +171,6 @@ public class AmazonKeyspacesRetryPolicy implements RetryPolicy {
         RetryDecision decision = determineRetryDecision(retryCount);
 
         LOG.trace(RETRYING_ON_ABORTED, logPrefix, retryCount, error);
-
 
         return decision;
     }

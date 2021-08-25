@@ -1,6 +1,5 @@
 package com.aws.ssa.keyspaces.throttler;
 
-import com.aws.ssa.keyspaces.core.EndpointType;
 import com.datastax.oss.driver.api.core.RequestThrottlingException;
 import com.datastax.oss.driver.api.core.config.DefaultDriverOption;
 import com.datastax.oss.driver.api.core.context.DriverContext;
@@ -69,10 +68,10 @@ public class AmazonKeyspacesFixedRateThrottler implements RequestThrottler {
     public static int PUBLIC_ENDPOINT_DEFAULT_HOST = 9;
 
     /***
-     * Amazon Keyspaces Virtual Private Cloud Endpoint (VPCE) exposes single host to drivers. The default behavior will establish one connection for every conection specified in
+     * Amazon Keyspaces Virtual Private Cloud Endpoint (VPCE) exposes host per availability zone. The default behavior will establish one connection to each peer IP address.
      * the driver.
      */
-    public static int VPC_ENDPOINT_DEFAULT_HOST = 1;
+    public static int VPC_ENDPOINT_DEFAULT_HOST = 2;
 
     /***
      * Rate limiter used to meter the CQL Request Per Second up to maxRequestsPerSecond
@@ -85,9 +84,9 @@ public class AmazonKeyspacesFixedRateThrottler implements RequestThrottler {
     private final RateLimiter maxConnectionsLimiter;
 
     /***
-     * Type of endpoint used which dictate the number of connections generated when creating a new session
+     * Number of hosts available when creating to a new session
      */
-    private final EndpointType endpointType;
+    private final Integer numberOfHosts;
 
     /***
      * Configured Rate of desired throughput
@@ -116,9 +115,9 @@ public class AmazonKeyspacesFixedRateThrottler implements RequestThrottler {
                             .getDuration(KeyspacesThrottleOption.KEYSPACES_THROTTLE_TIMEOUT,context.getConfig()
                             .getDefaultProfile()
                             .getDuration(DefaultDriverOption.REQUEST_TIMEOUT)).toMillis(),
-                    EndpointType.valueOf(context.getConfig()
+                    context.getConfig()
                             .getDefaultProfile()
-                            .getString(KeyspacesThrottleOption.KEYSPACES_THROTTLE_ENDPOINT_TYPE, KeyspacesThrottleOption.DEFAULT_ENDPOINT_TYPE.toString())),
+                            .getInt(KeyspacesThrottleOption.KEYSPACES_THROTTLE_NUMBER_OF_HOSTS, KeyspacesThrottleOption.DEFAULT_NUMBER_OF_HOSTS),
                     context.getConfig()
                             .getDefaultProfile()
                             .getInt(DefaultDriverOption.CONNECTION_POOL_LOCAL_SIZE));
@@ -127,14 +126,14 @@ public class AmazonKeyspacesFixedRateThrottler implements RequestThrottler {
 
         /*** Initialization of the Throttler ***/
         public AmazonKeyspacesFixedRateThrottler(DriverContext context, long maxRequestsPerSecond, long registerTimeoutInMs
-                , EndpointType endpointType, int numberOfConnectionsPerHost) {
+                , int numberOfHosts, int numberOfConnectionsPerHost) {
             this.logPrefix = context.getSessionName();
 
             this.maxRequestsPerSecond = maxRequestsPerSecond;
 
             this.registerTimeoutInMs = registerTimeoutInMs;
 
-            this.endpointType = endpointType;
+            this.numberOfHosts = numberOfHosts;
 
             this.numberOfConnectionsPerHost = numberOfConnectionsPerHost;
 
@@ -179,29 +178,29 @@ public class AmazonKeyspacesFixedRateThrottler implements RequestThrottler {
                     registerTimeoutInMs);
 
             LOG.info(
-                    "[{}] Based on Throttler max of {} request per second, the recommended number of connections for VPC Endpoint is: {}, currently {}",
+                    "[{}] Based on Throttler max of {} request per second, the recommended number of connections for number of hosts: {}, currently {}",
                     logPrefix,
                     maxRequestsPerSecond,
-                    simpleConnectionRecommendation(maxRequestsPerSecond, EndpointType.VPC),
+                    simpleConnectionRecommendation(maxRequestsPerSecond, numberOfHosts),
                     numberOfConnectionsPerHost);
 
             LOG.info(
                     "[{}] Based on Throttler max of {} request per second, the recommended number of connections for the Public Endpoint is: {}, currently {}",
                     logPrefix,
                     maxRequestsPerSecond,
-                    simpleConnectionRecommendation(maxRequestsPerSecond, EndpointType.PUBLIC),
+                    simpleConnectionRecommendation(maxRequestsPerSecond, numberOfHosts),
                     numberOfConnectionsPerHost);
 
 
             //The rate for the number of request per second based on the number of connections. Should be greater than maxRequestsPerSecond
-            int maxRequestPerSecondByForConnections = calculateConnectionMaxRequestPerSecond(endpointType, numberOfConnectionsPerHost);
+            int maxRequestPerSecondByForConnections = calculateConnectionMaxRequestPerSecond(numberOfHosts, numberOfConnectionsPerHost);
 
             if(maxRequestPerSecondByForConnections < maxRequestsPerSecond){
                 LOG.warn(
-                        "[{}] Cannot reach Max Request Per Second of {}. Specified Endpoint type of {}, and number of connections {} will provide at most {} request per second. Try increasing advanced.connection.pool.local.size ",
+                        "[{}] Cannot reach Max Request Per Second of {}. Specified number of hosts {}, and number of connections {} will provide at most {} request per second. Try increasing advanced.connection.pool.local.size or check system.peers table fo the number of hosts ",
                         logPrefix,
                         maxRequestsPerSecond,
-                        endpointType,
+                        numberOfHosts,
                         numberOfConnectionsPerHost,
                         maxRequestPerSecondByForConnections);
 
@@ -218,27 +217,23 @@ public class AmazonKeyspacesFixedRateThrottler implements RequestThrottler {
 
     /***
      * Calculate the number of request per second based on the number of connections, number of hosts, and 2000 request per second.
-     * @param endpointType VPC or Public Endpoint
+     * @param numberOfHosts Number of hosts in the peers table. Depends on region and end point
      * @param numberOfConnectionsPerHost Number of connections for each host ip
      * @return max rate per second based on the number of connections
      */
-        public static int calculateConnectionMaxRequestPerSecond(EndpointType endpointType, int numberOfConnectionsPerHost){
-            return (endpointType == EndpointType.VPC)
-                    ? numberOfConnectionsPerHost * VPC_ENDPOINT_DEFAULT_HOST * REQUEST_PER_CONNECTION_DEFAULT
-                    : numberOfConnectionsPerHost * PUBLIC_ENDPOINT_DEFAULT_HOST * REQUEST_PER_CONNECTION_DEFAULT;
+        public static int calculateConnectionMaxRequestPerSecond(Integer numberOfHosts, int numberOfConnectionsPerHost){
+            return  numberOfConnectionsPerHost * numberOfHosts * REQUEST_PER_CONNECTION_DEFAULT;
         }
 
     /***
      * Calculate recommended connections based on the current maxRequestRate specified. Max Connections rate should be greater than configured max request rate
      * @param maxRequestsPerSecond number of configured request per second
-     * @param endpointType type of endpoint that will be used to identify the number of hosts
+     * @param numberOfHosts type of endpoint that will be used to identify the number of hosts
      * @return
      */
-        public static double simpleConnectionRecommendation(long maxRequestsPerSecond, EndpointType endpointType){
-            int hosts = (endpointType == EndpointType.VPC)
-                    ? VPC_ENDPOINT_DEFAULT_HOST:PUBLIC_ENDPOINT_DEFAULT_HOST;
+        public static double simpleConnectionRecommendation(long maxRequestsPerSecond, Integer numberOfHosts){
 
-            return Math.max(1.0, Math.ceil(maxRequestsPerSecond/(double)(hosts * REQUEST_PER_CONNECTION_DEFAULT)));
+            return Math.max(1.0, Math.ceil(maxRequestsPerSecond/(double)(numberOfHosts * REQUEST_PER_CONNECTION_DEFAULT)));
         }
 
     /***
