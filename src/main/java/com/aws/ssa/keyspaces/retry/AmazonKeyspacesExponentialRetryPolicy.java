@@ -5,13 +5,20 @@ import com.datastax.oss.driver.api.core.config.DriverExecutionProfile;
 import com.datastax.oss.driver.api.core.context.DriverContext;
 import com.datastax.oss.driver.api.core.retry.RetryDecision;
 import com.datastax.oss.driver.api.core.retry.RetryPolicy;
-import com.datastax.oss.driver.api.core.servererrors.*;
+import com.datastax.oss.driver.api.core.servererrors.CoordinatorException;
+import com.datastax.oss.driver.api.core.servererrors.ReadTimeoutException;
+import com.datastax.oss.driver.api.core.servererrors.WriteTimeoutException;
+import com.datastax.oss.driver.api.core.servererrors.WriteType;
 import com.datastax.oss.driver.api.core.session.Request;
 import com.datastax.oss.driver.shaded.guava.common.annotations.VisibleForTesting;
+import com.datastax.oss.driver.shaded.guava.common.util.concurrent.Uninterruptibles;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import net.jcip.annotations.ThreadSafe;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 
 
 /**
@@ -19,7 +26,7 @@ import org.slf4j.LoggerFactory;
  * It allows for a configurable number of attempts, but by default the number of attempts is {@value KeyspacesRetryOption#DEFAULT_KEYSPACES_RETRY_MAX_ATTEMPTS}
  * <p>
  * This policy will either reattempt request on the same host or rethrow the exception to the calling thread. The main difference between
- * this policy from the original {@link com.datastax.oss.driver.internal.core.retry.DefaultRetryPolicy} is that the {@link AmazonKeyspacesRetryPolicy} will call {@link RetryDecision#RETRY_SAME} instead of {@link RetryDecision#RETRY_NEXT}
+ * this policy from the original {@link com.datastax.oss.driver.internal.core.retry.DefaultRetryPolicy} is that the {@link AmazonKeyspacesExponentialRetryPolicy} will call {@link RetryDecision#RETRY_SAME} instead of {@link RetryDecision#RETRY_NEXT}
  * <p>
  * In Amazon Keyspaces, it's likely that {@link WriteTimeoutException} or {@link ReadTimeoutException} is the result of exceeding current table
  * capacity. Learn more about Amazon Keyspaces capacity here: @see <a href="https://docs.aws.amazon.com/keyspaces/latest/devguide/ReadWriteCapacityMode.html">Amazon Keyspaces CapacityModes</a>.
@@ -39,10 +46,10 @@ import org.slf4j.LoggerFactory;
  */
 
 @ThreadSafe
-public class AmazonKeyspacesRetryPolicy implements RetryPolicy {
+public class AmazonKeyspacesExponentialRetryPolicy implements RetryPolicy {
 
 
-    private static final Logger LOG = LoggerFactory.getLogger(AmazonKeyspacesRetryPolicy.class);
+    private static final Logger LOG = LoggerFactory.getLogger(AmazonKeyspacesExponentialRetryPolicy.class);
     @VisibleForTesting
     public static final String RETRYING_ON_READ_TIMEOUT = "[{}] Retrying on read timeout on same host (consistency: {}, required responses: {}, received responses: {}, data retrieved: {}, retries: {})";
     @VisibleForTesting
@@ -58,12 +65,13 @@ public class AmazonKeyspacesRetryPolicy implements RetryPolicy {
 
     private final Integer maxRetryCount;
 
+    //private final Integer maxTimeToWait;
 
-    public AmazonKeyspacesRetryPolicy(DriverContext context) {
+    public AmazonKeyspacesExponentialRetryPolicy(DriverContext context) {
         this(context, context.getConfig().getDefaultProfile().getName());
     }
 
-    public AmazonKeyspacesRetryPolicy(DriverContext context, Integer maxRetryCount) {
+    public AmazonKeyspacesExponentialRetryPolicy(DriverContext context, Integer maxRetryCount) {
 
         String profileName = context.getConfig().getDefaultProfile().getName();
 
@@ -72,7 +80,7 @@ public class AmazonKeyspacesRetryPolicy implements RetryPolicy {
         this.logPrefix = (context != null ? context.getSessionName() : null) + "|" + profileName;
     }
 
-    public AmazonKeyspacesRetryPolicy(DriverContext context, String profileName) {
+    public AmazonKeyspacesExponentialRetryPolicy(DriverContext context, String profileName) {
         DriverExecutionProfile retryExecutionProfile = context.getConfig().getProfile(profileName);
 
         maxRetryCount = retryExecutionProfile.getInt(KeyspacesRetryOption.KEYSPACES_RETRY_MAX_ATTEMPTS, KeyspacesRetryOption.DEFAULT_KEYSPACES_RETRY_MAX_ATTEMPTS);
@@ -82,12 +90,26 @@ public class AmazonKeyspacesRetryPolicy implements RetryPolicy {
 
 
     protected RetryDecision determineRetryDecision(int retryCount) {
+
         if (retryCount < maxRetryCount) {
+            timeToWait(retryCount);
+
             return RetryDecision.RETRY_SAME;
         } else {
             return RetryDecision.RETHROW;
+
+
         }
     }
+    protected void timeToWait(int retryCount){
+
+        int timeToWaitCalculation = (retryCount + 1) * ThreadLocalRandom.current().nextInt(1, 20);
+
+        int timeToWaitFinal = Math.min(500, timeToWaitCalculation);
+
+        Uninterruptibles.sleepUninterruptibly(timeToWaitFinal, TimeUnit.MILLISECONDS);
+    }
+
 
     /**
      * {@inheritDoc}

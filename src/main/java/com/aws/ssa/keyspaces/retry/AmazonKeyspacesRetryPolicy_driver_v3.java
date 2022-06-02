@@ -1,9 +1,14 @@
-/*
+/***
+
 package com.aws.ssa.keyspaces.retry;
 
 import com.datastax.driver.core.*;
 import com.datastax.driver.core.exceptions.DriverException;
 import com.datastax.driver.core.policies.RetryPolicy;
+import com.google.common.util.concurrent.Uninterruptibles;
+
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 
 // ** Commented out so that it will not break compile. For v3 you should use the appropriate maven dependency. 
 // Taken from https://github.com/aws-samples/amazon-keyspaces-examples/
@@ -30,11 +35,24 @@ public class AmazonKeyspacesRetryPolicy implements RetryPolicy {
     }
 
     protected RetryDecision makeDecisionBasedOnNumberOfConfiguredRetries(int nbRetry, ConsistencyLevel cl){
-        if(nbRetry > maxNumberOfRetries){
+        if(nbRetry < maxNumberOfRetries){
+            timeToWait(nbRetry);
+
+            return RetryDecision.retry(cl);
+
+        }else{
             return RetryDecision.rethrow();
         }
 
-        return RetryDecision.retry(cl);
+
+    }
+    protected void timeToWait(int retryCount){
+
+        int timeToWaitCalculation = (retryCount + 1) * ThreadLocalRandom.current().nextInt(1, 20);
+
+        int timeToWaitFinal = Math.min(1000, timeToWaitCalculation);
+
+        Uninterruptibles.sleepUninterruptibly(timeToWaitFinal, TimeUnit.MILLISECONDS);
     }
 
     public RetryDecision onReadTimeout(Statement statement, ConsistencyLevel cl, int requiredResponses, int receivedResponses, boolean dataRetrieved, int nbRetry) {
@@ -58,6 +76,4 @@ public class AmazonKeyspacesRetryPolicy implements RetryPolicy {
 
     public void close() {
     }
-
-
-}*/
+}***/

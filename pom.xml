@@ -16,11 +16,24 @@
 
 
     <dependencies>
+        <!--
+       <dependency>
+           <groupId>com.datastax.cassandra</groupId>
+           <artifactId>cassandra-driver-core</artifactId>
+           <version>3.11.0</version>
+       </dependency>
+      -->
+       <dependency>
+           <groupId>com.datastax.oss</groupId>
+           <artifactId>java-driver-core</artifactId>
+           <version>4.11.3</version>
+           <scope>provided</scope>
+       </dependency>
         <dependency>
-            <groupId>com.datastax.oss</groupId>
-            <artifactId>java-driver-core</artifactId>
-            <version>4.2.0</version>
-            <scope>provided</scope>
+            <groupId>software.aws.mcs</groupId>
+            <artifactId>aws-sigv4-auth-cassandra-java-driver-plugin</artifactId>
+            <version>4.0.4</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
@@ -28,12 +41,8 @@
             <version>4.13.2</version>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>software.aws.mcs</groupId>
-            <artifactId>aws-sigv4-auth-cassandra-java-driver-plugin</artifactId>
-            <version>4.0.4</version>
-            <scope>test</scope>
-        </dependency>
+
+
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>

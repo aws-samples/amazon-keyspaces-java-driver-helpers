@@ -1,10 +1,13 @@
 package com.aws.ssa.keyspaces.throttler;
 
+import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.RequestThrottlingException;
 import com.datastax.oss.driver.api.core.config.DefaultDriverOption;
 import com.datastax.oss.driver.api.core.context.DriverContext;
 import com.datastax.oss.driver.api.core.session.throttling.RequestThrottler;
 import com.datastax.oss.driver.api.core.session.throttling.Throttled;
+import com.datastax.oss.driver.internal.core.adminrequest.ThrottledAdminRequestHandler;
+import com.datastax.oss.driver.internal.core.cql.CqlRequestHandler;
 import com.datastax.oss.driver.shaded.guava.common.util.concurrent.BurstyRateLimiterFactory;
 import com.datastax.oss.driver.shaded.guava.common.util.concurrent.RateLimiter;
 import edu.umd.cs.findbugs.annotations.NonNull;
@@ -213,6 +216,29 @@ public class AmazonKeyspacesFixedRateThrottler implements RequestThrottler {
             //Fixed number of permits that expire every second. Ceiling with no bursting
             this.maxConnectionsLimiter = RateLimiter.create(maxRequestPerSecondByForConnections);
 
+
+            try(CqlSession internalSession = CqlSession.builder().withConfigLoader(context.getConfigLoader()).build()){
+                int number =  internalSession.execute("select * from system.peers").all().size();
+                if(number < numberOfHosts){
+                    LOG.warn(
+                            "[{}] Number of host in system.peers is less than the number of host configured {}. If using a private VPC endpoint make sure privilages allow for  ",
+                            logPrefix,
+                            maxRequestsPerSecond,
+                            numberOfHosts,
+                            numberOfConnectionsPerHost,
+                            maxRequestPerSecondByForConnections);
+                }else if (number > numberOfHosts){
+                    LOG.warn(
+                            "[{}] Number of host in system.peers is more than the number of host configured {}. Increase the number of host configured host to improve throughput",
+                            logPrefix,
+                            maxRequestsPerSecond,
+                            numberOfHosts,
+                            numberOfConnectionsPerHost,
+                            maxRequestPerSecondByForConnections);
+                }
+            };
+
+
         }
 
     /***
@@ -243,9 +269,17 @@ public class AmazonKeyspacesFixedRateThrottler implements RequestThrottler {
     @Override
         public void register(@NonNull Throttled request) {
 
+        //Allow admin request
+        if(request instanceof ThrottledAdminRequestHandler) {
+            request.onThrottleReady(false);
+            return;
+        }
+
+
             long startTime = System.currentTimeMillis();
 
             //fail if connections not available which should be higher limit than maxRequestRate
+           //can occur if bursting for a single second where the rate limiter is over 2 minutes.
            if(maxConnectionsLimiter.tryAcquire(1, registerTimeoutInMs, TimeUnit.MILLISECONDS) == false){
                fail(request, String.format("Timeout waiting for connection permits. Increase number of connections. request timeout: %d seconds)", this.maxRequestsPerSecond, this.registerTimeoutInMs));
            }
@@ -254,6 +288,7 @@ public class AmazonKeyspacesFixedRateThrottler implements RequestThrottler {
 
             //registerTimeoutInMs should account for acquiring from both limiters. Ensure that this value is greater than or equal to 0
             long timeoutForRequestPermits = (elapsedTime>=registerTimeoutInMs)?0:registerTimeoutInMs - elapsedTime;
+
 
             if(limiter.tryAcquire(1, timeoutForRequestPermits, TimeUnit.MILLISECONDS)){
                 request.onThrottleReady(false);
