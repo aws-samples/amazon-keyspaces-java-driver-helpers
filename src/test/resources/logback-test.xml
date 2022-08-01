@@ -13,14 +13,30 @@
         <appender-ref ref="STDOUT" />
     </root>
 
-    <logger name="com.aws.ssa.keyspaces.retry.AmazonKeyspacesRetryPolicy" level="TRACE" additivity="false">
+    <logger name="com.aws.ssa.keyspaces.retry.AmazonKeyspacesRetryPolicy" level="INFO" additivity="false">
         <appender-ref ref="STDOUT" />
     </logger>
-    <logger name="com.aws.ssa.keyspaces.throttler.AmazonKeyspacesFixedRateThrottler" level="DEBUG" additivity="false">
+    <logger name="com.aws.ssa.keyspaces.throttler.AmazonKeyspacesFixedRateThrottler" level="INFO" additivity="false">
         <appender-ref ref="STDOUT" />
     </logger>
-    <logger name="com.aws.ssa.keyspaces.throttler.AmazonKeyspacesBlockingFIxedRateThrottler" level="DEBUG" additivity="false">
+    <logger name="com.aws.ssa.keyspaces.throttler.AmazonKeyspacesBlockingFixedRateThrottler" level="INFO" additivity="false">
         <appender-ref ref="STDOUT" />
     </logger>
+    <logger name="com.datastax.driver.core.Connection" level="INFO" additivity="false">
+        <appender-ref ref="STDOUT" />
+    </logger>
+    <logger name="com.datastax.driver.core.Cluster" level="INFO" additivity="false">
+        <appender-ref ref="STDOUT" />
+    </logger>
+    <logger name="com.datastax.driver.core.Session" level="INFO" additivity="false">
+        <appender-ref ref="STDOUT" />
+    </logger>
+    <logger name="com.aws.ssa.keyspaces.loadbalancing.AmazonKeyspacesRoundRobinLoadBalancingPolicy" level="TRACE" additivity="false">
+        <appender-ref ref="STDOUT" />
+    </logger>
+
+
+
+
 
     </configuration>

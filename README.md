@@ -52,6 +52,23 @@ To activate this throttler, modify the {@code advanced.throttler} section in the
 * `number-of-hosts` : The number of hosts in the system.peers table.  Depending on the endpoint type and region the number of hosts in the system.peers table may be different. This number is Used to validate throughput based on the number of connections specified in:`advanced.connection.pool.local.size`
 * `register-timeout` timeout waiting for permits. Should be less than or equal to `basic.request.timeout'
 
+## Load balancing policies
+
+Load balancing policies for the Cassandra driver have two main functions. First is to help distribute load across all nodes in a cluster, and the second is to route request to nodes for optimized access. The policy does not have visibility across all client sessions, which typically are instantiated one session per jvm. For each request, the load balancer policy constructs a new "query plan" . A query plan decides which node to send a cql request. Additionally, if retries are needed, the query plan will decide the order of nodes to be attempted. Most cassandra driver load balancing policies are designed to randomize the request in a "round-robin" algorithm, but weighted by replica set, latency, least-busy connection, and node uptime. The weights are designed for routing, but sometimes the weights can result in more transactions headed to a fewer number of hosts.
+
+With Amazon Keyspaces its important for the driver to load balance traffic across connections, but routing is a responsibility owned by the service. With this improvement, the driver can used a simplified load balancing policy.  Thus, the most efficient load balancing policy is often one which evenly distributes request across available host and connections without considering additional weights.
+
+
+### AmazonKeyspacesLoadBalancingPolicy 
+Is a roundrobin policy, for each request a random order of nodes is designated as the query plan. The order is created randomly without weights such as latency and token awareness. Customers scale throughput by creating more connections. 
+
+The AmazonKeyspacesLoadBalancingPolicy load balancing policy is configured in the following way. The ```local-datacenter``` should be the Amazon Keyspaces region name.
+```
+basic.load-balancing-policy {
+        class = com.aws.ssa.keyspaces.loadbalancing.AmazonKeyspacesRoundRobinLoadBalancingPolicy
+        local-datacenter = "us-east-1"
+   }
+```
 
 # Build this project
 To build and use this library execute the following mvn command and place on the classpath of your application. 
