@@ -1,7 +1,9 @@
 package com.aws.ssa.keyspaces.retry;
 
 import com.datastax.oss.driver.api.core.ConsistencyLevel;
+import com.datastax.oss.driver.api.core.config.DefaultDriverOption;
 import com.datastax.oss.driver.api.core.config.DriverExecutionProfile;
+import com.datastax.oss.driver.api.core.config.DriverOption;
 import com.datastax.oss.driver.api.core.context.DriverContext;
 import com.datastax.oss.driver.api.core.retry.RetryDecision;
 import com.datastax.oss.driver.api.core.retry.RetryPolicy;
@@ -10,13 +12,19 @@ import com.datastax.oss.driver.api.core.servererrors.ReadTimeoutException;
 import com.datastax.oss.driver.api.core.servererrors.WriteTimeoutException;
 import com.datastax.oss.driver.api.core.servererrors.WriteType;
 import com.datastax.oss.driver.api.core.session.Request;
+import com.datastax.oss.driver.internal.core.retry.DefaultRetryPolicy;
 import com.datastax.oss.driver.shaded.guava.common.annotations.VisibleForTesting;
 import com.datastax.oss.driver.shaded.guava.common.util.concurrent.Uninterruptibles;
 import edu.umd.cs.findbugs.annotations.NonNull;
+import jnr.ffi.annotations.In;
 import net.jcip.annotations.ThreadSafe;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
+import java.time.Period;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalUnit;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
@@ -37,10 +45,13 @@ import java.util.concurrent.TimeUnit;
  *
  * <pre>
  * datastax-java-driver {
- *   advanced.retry-policy {
- *     class = com.aws.ssa.keyspaces.retry.AmazonKeyspacesRetryPolicy
- *     max-attempts = 2
- *   }
+ *    basic.request.default-idempotence = true
+ *    advanced.retry-policy{
+ *      class =  com.aws.ssa.keyspaces.retry.AmazonKeyspacesExponentialRetryPolicy
+ *      max-attempts = 3
+ *      min-wait = 10 mills
+ *      max-wait = 100 mills
+ *    }
  * }
  * </pre>
  */
@@ -64,6 +75,8 @@ public class AmazonKeyspacesExponentialRetryPolicy implements RetryPolicy {
     private final String logPrefix;
 
     private final Integer maxRetryCount;
+    private final Long minWaitTime;
+    private final Long maxWaitTime;
 
     //private final Integer maxTimeToWait;
 
@@ -75,7 +88,24 @@ public class AmazonKeyspacesExponentialRetryPolicy implements RetryPolicy {
 
         String profileName = context.getConfig().getDefaultProfile().getName();
 
+        DriverExecutionProfile retryExecutionProfile = context.getConfig().getProfile(profileName);
+
         this.maxRetryCount = maxRetryCount;
+        Duration minWaitDuration = retryExecutionProfile.getDuration(KeyspacesRetryOption.KEYSPACES_RETRY_MIN_WAIT, KeyspacesRetryOption.DEFAULT_KEYSPACES_RETRY_MIN_WAIT);
+        Duration maxWaitDuration = retryExecutionProfile.getDuration(KeyspacesRetryOption.KEYSPACES_RETRY_MAX_WAIT, KeyspacesRetryOption.DEFAULT_KEYSPACES_RETRY_MAX_WAIT);
+
+        this.minWaitTime = minWaitDuration.toMillis();
+        this.maxWaitTime = maxWaitDuration.toMillis();
+
+        this.logPrefix = (context != null ? context.getSessionName() : null) + "|" + profileName;
+    }
+    public AmazonKeyspacesExponentialRetryPolicy(DriverContext context, Integer maxRetryCount, Duration minWaitTime, Duration maxWaitTime) {
+
+        String profileName = context.getConfig().getDefaultProfile().getName();
+
+        this.maxRetryCount = maxRetryCount;
+        this.minWaitTime = minWaitTime.toMillis();
+        this.maxWaitTime = maxWaitTime.toMillis();
 
         this.logPrefix = (context != null ? context.getSessionName() : null) + "|" + profileName;
     }
@@ -83,7 +113,14 @@ public class AmazonKeyspacesExponentialRetryPolicy implements RetryPolicy {
     public AmazonKeyspacesExponentialRetryPolicy(DriverContext context, String profileName) {
         DriverExecutionProfile retryExecutionProfile = context.getConfig().getProfile(profileName);
 
+
         maxRetryCount = retryExecutionProfile.getInt(KeyspacesRetryOption.KEYSPACES_RETRY_MAX_ATTEMPTS, KeyspacesRetryOption.DEFAULT_KEYSPACES_RETRY_MAX_ATTEMPTS);
+
+        Duration minWaitDuration = retryExecutionProfile.getDuration(KeyspacesRetryOption.KEYSPACES_RETRY_MIN_WAIT, KeyspacesRetryOption.DEFAULT_KEYSPACES_RETRY_MIN_WAIT);
+        Duration maxWaitDuration = retryExecutionProfile.getDuration(KeyspacesRetryOption.KEYSPACES_RETRY_MAX_WAIT, KeyspacesRetryOption.DEFAULT_KEYSPACES_RETRY_MAX_WAIT);
+
+        this.minWaitTime = minWaitDuration.toMillis();
+        this.maxWaitTime = maxWaitDuration.toMillis();
 
         this.logPrefix = (context != null ? context.getSessionName() : null) + "|" + profileName;
     }
@@ -103,9 +140,9 @@ public class AmazonKeyspacesExponentialRetryPolicy implements RetryPolicy {
     }
     protected void timeToWait(int retryCount){
 
-        int timeToWaitCalculation = (retryCount + 1) * ThreadLocalRandom.current().nextInt(1, 20);
+        long timeToWaitCalculation = minWaitTime + ThreadLocalRandom.current().nextInt(retryCount, Double.valueOf(Math.pow(2d, Integer.valueOf(retryCount).doubleValue())).intValue());
 
-        int timeToWaitFinal = Math.min(500, timeToWaitCalculation);
+        long timeToWaitFinal = Math.min(maxWaitTime, timeToWaitCalculation);
 
         Uninterruptibles.sleepUninterruptibly(timeToWaitFinal, TimeUnit.MILLISECONDS);
     }

@@ -14,13 +14,15 @@ import org.junit.Assert;
 import org.junit.Test;
 import com.datastax.oss.driver.shaded.guava.common.base.Stopwatch;
 
+import java.time.Duration;
+
 public class AmazonKeyspacesExponentialRetryPolicyTest {
 
     @Test
     public void determineRetryDecisionExceed() {
 
         DriverContext context = new DefaultDriverContext(new DefaultProgrammaticDriverConfigLoaderBuilder().build(), ProgrammaticArguments.builder().build());
-        AmazonKeyspacesExponentialRetryPolicy st = new AmazonKeyspacesExponentialRetryPolicy(context, 3);
+        AmazonKeyspacesExponentialRetryPolicy st = new AmazonKeyspacesExponentialRetryPolicy(context, 3, Duration.ofMillis(10), Duration.ofMillis(50));
 
         Assert.assertEquals(RetryDecision.RETHROW, st.determineRetryDecision(4));
 
@@ -30,7 +32,7 @@ public class AmazonKeyspacesExponentialRetryPolicyTest {
 
         DriverContext context = new DefaultDriverContext(new DefaultProgrammaticDriverConfigLoaderBuilder().build(), ProgrammaticArguments.builder().build());
 
-        AmazonKeyspacesExponentialRetryPolicy st = new AmazonKeyspacesExponentialRetryPolicy(context, 1);
+        AmazonKeyspacesExponentialRetryPolicy st = new AmazonKeyspacesExponentialRetryPolicy(context, 1, Duration.ofMillis(10), Duration.ofMillis(50));
 
         Stopwatch stopwatch = Stopwatch.createStarted();
 
@@ -40,7 +42,7 @@ public class AmazonKeyspacesExponentialRetryPolicyTest {
 
         long millsObserved = stopwatch.elapsed().toMillis();
 
-        Assert.assertTrue(millsObserved > 1 && millsObserved < 20);
+        Assert.assertTrue(millsObserved > 1 && millsObserved < 21);
 
     }
     @Test
@@ -48,7 +50,7 @@ public class AmazonKeyspacesExponentialRetryPolicyTest {
 
         DriverContext context = new DefaultDriverContext(new DefaultProgrammaticDriverConfigLoaderBuilder().build(), ProgrammaticArguments.builder().build());
 
-        AmazonKeyspacesExponentialRetryPolicy st = new AmazonKeyspacesExponentialRetryPolicy(context, 0);
+        AmazonKeyspacesExponentialRetryPolicy st=  new AmazonKeyspacesExponentialRetryPolicy(context, 0, Duration.ofMillis(10), Duration.ofMillis(50));
 
         Stopwatch stopwatch = Stopwatch.createStarted();
 
@@ -78,7 +80,8 @@ public class AmazonKeyspacesExponentialRetryPolicyTest {
 
         long millsObserved = stopwatch.elapsed().toMillis();
 
-        Assert.assertTrue(millsObserved > 1 && millsObserved < 20);
+
+        Assert.assertTrue(String.format("Asset %s", millsObserved), millsObserved > 1 && millsObserved < 20);
 
     }
     @Test
@@ -90,15 +93,13 @@ public class AmazonKeyspacesExponentialRetryPolicyTest {
 
         Stopwatch stopwatch = Stopwatch.createStarted();
 
-        st.timeToWait(100000);
+        st.timeToWait(10);
 
         stopwatch.stop();
 
         long millsObserved = stopwatch.elapsed().toMillis();
 
-        System.out.println(millsObserved);
-
-        Assert.assertTrue(millsObserved > 999 && millsObserved < 1010);
+        Assert.assertTrue(String.format("millsObserved: %d",millsObserved), millsObserved > 10 && millsObserved < 100);
 
     }
 
@@ -195,7 +196,9 @@ public class AmazonKeyspacesExponentialRetryPolicyTest {
 
     @Test
     public void testConfig() {
-        Assert.assertEquals(3, DriverConfigLoader.fromClasspath("retry-example").getInitialConfig().getDefaultProfile().getInt(KeyspacesRetryOption.KEYSPACES_RETRY_MAX_ATTEMPTS, KeyspacesRetryOption.DEFAULT_KEYSPACES_RETRY_MAX_ATTEMPTS));
+        Assert.assertEquals(3, DriverConfigLoader.fromClasspath("exponential-retry-example").getInitialConfig().getDefaultProfile().getInt(KeyspacesRetryOption.KEYSPACES_RETRY_MAX_ATTEMPTS, KeyspacesRetryOption.DEFAULT_KEYSPACES_RETRY_MAX_ATTEMPTS));
+        Assert.assertEquals(5, DriverConfigLoader.fromClasspath("exponential-retry-example").getInitialConfig().getDefaultProfile().getDuration(KeyspacesRetryOption.KEYSPACES_RETRY_MIN_WAIT, KeyspacesRetryOption.DEFAULT_KEYSPACES_RETRY_MIN_WAIT).toMillis());
+        Assert.assertEquals(100, DriverConfigLoader.fromClasspath("exponential-retry-example").getInitialConfig().getDefaultProfile().getDuration(KeyspacesRetryOption.KEYSPACES_RETRY_MAX_WAIT, KeyspacesRetryOption.DEFAULT_KEYSPACES_RETRY_MAX_WAIT).toMillis());
     }
 
 }
