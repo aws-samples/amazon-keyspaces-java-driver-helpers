@@ -10,8 +10,8 @@ import com.datastax.oss.driver.api.core.servererrors.WriteType;
 import com.datastax.oss.driver.api.core.session.ProgrammaticArguments;
 import com.datastax.oss.driver.internal.core.config.typesafe.DefaultProgrammaticDriverConfigLoaderBuilder;
 import com.datastax.oss.driver.internal.core.context.DefaultDriverContext;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 import com.datastax.oss.driver.shaded.guava.common.base.Stopwatch;
 
 import java.time.Duration;
@@ -24,7 +24,7 @@ public class AmazonKeyspacesExponentialRetryPolicyTest {
         DriverContext context = new DefaultDriverContext(new DefaultProgrammaticDriverConfigLoaderBuilder().build(), ProgrammaticArguments.builder().build());
         AmazonKeyspacesExponentialRetryPolicy st = new AmazonKeyspacesExponentialRetryPolicy(context, 3, Duration.ofMillis(10), Duration.ofMillis(50));
 
-        Assert.assertEquals(RetryDecision.RETHROW, st.determineRetryDecision(4));
+        assertEquals(RetryDecision.RETHROW, st.determineRetryDecision(4));
 
     }
     @Test
@@ -42,7 +42,7 @@ public class AmazonKeyspacesExponentialRetryPolicyTest {
 
         long millsObserved = stopwatch.elapsed().toMillis();
 
-        Assert.assertTrue(millsObserved > 1 && millsObserved < 21);
+        assertTrue(millsObserved > 1 && millsObserved < 21);
 
     }
     @Test
@@ -62,7 +62,7 @@ public class AmazonKeyspacesExponentialRetryPolicyTest {
 
         System.out.println(millsObserved);
 
-        Assert.assertTrue(millsObserved >= 0 && millsObserved < 5);
+        assertTrue(millsObserved >= 0 && millsObserved < 5);
 
     }
     @Test
@@ -81,7 +81,7 @@ public class AmazonKeyspacesExponentialRetryPolicyTest {
         long millsObserved = stopwatch.elapsed().toMillis();
 
 
-        Assert.assertTrue(String.format("Asset %s", millsObserved), millsObserved > 1 && millsObserved < 20);
+        assertTrue(millsObserved > 1 && millsObserved < 20, String.format("Asset %s", millsObserved));
 
     }
     @Test
@@ -99,7 +99,7 @@ public class AmazonKeyspacesExponentialRetryPolicyTest {
 
         long millsObserved = stopwatch.elapsed().toMillis();
 
-        Assert.assertTrue(String.format("millsObserved: %d",millsObserved), millsObserved > 10 && millsObserved < 100);
+        assertTrue(millsObserved > 10 && millsObserved < 100, String.format("millsObserved: %d",millsObserved));
 
     }
 
@@ -108,7 +108,7 @@ public class AmazonKeyspacesExponentialRetryPolicyTest {
         DriverContext context = new DefaultDriverContext(new DefaultProgrammaticDriverConfigLoaderBuilder().build(), ProgrammaticArguments.builder().build());
         AmazonKeyspacesExponentialRetryPolicy st = new AmazonKeyspacesExponentialRetryPolicy(context, 3);
 
-        Assert.assertEquals(RetryDecision.RETRY_SAME, st.determineRetryDecision(0));
+        assertEquals(RetryDecision.RETRY_SAME, st.determineRetryDecision(0));
 
     }
 
@@ -117,7 +117,7 @@ public class AmazonKeyspacesExponentialRetryPolicyTest {
         DriverContext context = new DefaultDriverContext(new DefaultProgrammaticDriverConfigLoaderBuilder().build(), ProgrammaticArguments.builder().build());
         AmazonKeyspacesExponentialRetryPolicy st = new AmazonKeyspacesExponentialRetryPolicy(context, 3);
 
-        Assert.assertEquals(RetryDecision.RETRY_SAME, st.determineRetryDecision(1));
+        assertEquals(RetryDecision.RETRY_SAME, st.determineRetryDecision(1));
 
     }
 
@@ -126,7 +126,7 @@ public class AmazonKeyspacesExponentialRetryPolicyTest {
         DriverContext context = new DefaultDriverContext(new DefaultProgrammaticDriverConfigLoaderBuilder().build(), ProgrammaticArguments.builder().build());
         AmazonKeyspacesExponentialRetryPolicy st = new AmazonKeyspacesExponentialRetryPolicy(context, 3);
 
-        Assert.assertEquals(RetryDecision.RETRY_SAME, st.onWriteTimeout(null, ConsistencyLevel.LOCAL_QUORUM, WriteType.SIMPLE, 2, 0, 1));
+        assertEquals(RetryDecision.RETRY_SAME, st.onWriteTimeout(null, ConsistencyLevel.LOCAL_QUORUM, WriteType.SIMPLE, 2, 0, 1));
 
     }
 
@@ -135,7 +135,7 @@ public class AmazonKeyspacesExponentialRetryPolicyTest {
         DriverContext context = new DefaultDriverContext(new DefaultProgrammaticDriverConfigLoaderBuilder().build(), ProgrammaticArguments.builder().build());
         AmazonKeyspacesExponentialRetryPolicy st = new AmazonKeyspacesExponentialRetryPolicy(context, 3);
 
-        Assert.assertEquals(RetryDecision.RETHROW, st.onWriteTimeout(null, ConsistencyLevel.LOCAL_QUORUM, WriteType.SIMPLE, 2, 0, 4));
+        assertEquals(RetryDecision.RETHROW, st.onWriteTimeout(null, ConsistencyLevel.LOCAL_QUORUM, WriteType.SIMPLE, 2, 0, 4));
 
     }
 
@@ -144,7 +144,7 @@ public class AmazonKeyspacesExponentialRetryPolicyTest {
         DriverContext context = new DefaultDriverContext(new DefaultProgrammaticDriverConfigLoaderBuilder().build(), ProgrammaticArguments.builder().build());
         AmazonKeyspacesExponentialRetryPolicy st = new AmazonKeyspacesExponentialRetryPolicy(context, 3);
 
-        Assert.assertEquals(RetryDecision.RETRY_SAME, st.onReadTimeout(null, ConsistencyLevel.LOCAL_QUORUM, 2, 0, false, 1));
+        assertEquals(RetryDecision.RETRY_SAME, st.onReadTimeout(null, ConsistencyLevel.LOCAL_QUORUM, 2, 0, false, 1));
 
     }
 
@@ -153,7 +153,7 @@ public class AmazonKeyspacesExponentialRetryPolicyTest {
         DriverContext context = new DefaultDriverContext(new DefaultProgrammaticDriverConfigLoaderBuilder().build(), ProgrammaticArguments.builder().build());
         AmazonKeyspacesExponentialRetryPolicy st = new AmazonKeyspacesExponentialRetryPolicy(context, 3);
 
-        Assert.assertEquals(RetryDecision.RETHROW, st.onReadTimeout(null, ConsistencyLevel.LOCAL_QUORUM, 2, 0, false, 4));
+        assertEquals(RetryDecision.RETHROW, st.onReadTimeout(null, ConsistencyLevel.LOCAL_QUORUM, 2, 0, false, 4));
 
     }
 
@@ -162,7 +162,7 @@ public class AmazonKeyspacesExponentialRetryPolicyTest {
         DriverContext context = new DefaultDriverContext(new DefaultProgrammaticDriverConfigLoaderBuilder().build(), ProgrammaticArguments.builder().build());
         AmazonKeyspacesExponentialRetryPolicy st = new AmazonKeyspacesExponentialRetryPolicy(context, 3);
 
-        Assert.assertEquals(RetryDecision.RETRY_SAME, st.onErrorResponse(null, new WriteFailureException(null, ConsistencyLevel.LOCAL_QUORUM, 0, 2, WriteType.SIMPLE, 1, null), 2));
+        assertEquals(RetryDecision.RETRY_SAME, st.onErrorResponse(null, new WriteFailureException(null, ConsistencyLevel.LOCAL_QUORUM, 0, 2, WriteType.SIMPLE, 1, null), 2));
 
     }
 
@@ -172,7 +172,7 @@ public class AmazonKeyspacesExponentialRetryPolicyTest {
         AmazonKeyspacesExponentialRetryPolicy st = new AmazonKeyspacesExponentialRetryPolicy(context, 3);
 
 
-        Assert.assertEquals(RetryDecision.RETHROW, st.onErrorResponse(null, new WriteFailureException(null, ConsistencyLevel.LOCAL_QUORUM, 0, 2, WriteType.SIMPLE, 1, null), 4));
+        assertEquals(RetryDecision.RETHROW, st.onErrorResponse(null, new WriteFailureException(null, ConsistencyLevel.LOCAL_QUORUM, 0, 2, WriteType.SIMPLE, 1, null), 4));
 
     }
 
@@ -181,7 +181,7 @@ public class AmazonKeyspacesExponentialRetryPolicyTest {
         DriverContext context = new DefaultDriverContext(new DefaultProgrammaticDriverConfigLoaderBuilder().build(), ProgrammaticArguments.builder().build());
         AmazonKeyspacesExponentialRetryPolicy st = new AmazonKeyspacesExponentialRetryPolicy(context, 3);
 
-        Assert.assertEquals(RetryDecision.RETRY_SAME, st.onUnavailable(null, ConsistencyLevel.LOCAL_QUORUM, 1, 1, 2));
+        assertEquals(RetryDecision.RETRY_SAME, st.onUnavailable(null, ConsistencyLevel.LOCAL_QUORUM, 1, 1, 2));
 
     }
 
@@ -191,14 +191,14 @@ public class AmazonKeyspacesExponentialRetryPolicyTest {
         AmazonKeyspacesExponentialRetryPolicy st = new AmazonKeyspacesExponentialRetryPolicy(context, 3);
 
 
-        Assert.assertEquals(RetryDecision.RETHROW, st.onUnavailable(null, ConsistencyLevel.LOCAL_QUORUM, 1, 1, 4));
+        assertEquals(RetryDecision.RETHROW, st.onUnavailable(null, ConsistencyLevel.LOCAL_QUORUM, 1, 1, 4));
     }
 
     @Test
     public void testConfig() {
-        Assert.assertEquals(3, DriverConfigLoader.fromClasspath("exponential-retry-example").getInitialConfig().getDefaultProfile().getInt(KeyspacesRetryOption.KEYSPACES_RETRY_MAX_ATTEMPTS, KeyspacesRetryOption.DEFAULT_KEYSPACES_RETRY_MAX_ATTEMPTS));
-        Assert.assertEquals(5, DriverConfigLoader.fromClasspath("exponential-retry-example").getInitialConfig().getDefaultProfile().getDuration(KeyspacesRetryOption.KEYSPACES_RETRY_MIN_WAIT, KeyspacesRetryOption.DEFAULT_KEYSPACES_RETRY_MIN_WAIT).toMillis());
-        Assert.assertEquals(100, DriverConfigLoader.fromClasspath("exponential-retry-example").getInitialConfig().getDefaultProfile().getDuration(KeyspacesRetryOption.KEYSPACES_RETRY_MAX_WAIT, KeyspacesRetryOption.DEFAULT_KEYSPACES_RETRY_MAX_WAIT).toMillis());
+        assertEquals(3, DriverConfigLoader.fromClasspath("exponential-retry-example").getInitialConfig().getDefaultProfile().getInt(KeyspacesRetryOption.KEYSPACES_RETRY_MAX_ATTEMPTS, KeyspacesRetryOption.DEFAULT_KEYSPACES_RETRY_MAX_ATTEMPTS));
+        assertEquals(10, DriverConfigLoader.fromClasspath("exponential-retry-example").getInitialConfig().getDefaultProfile().getDuration(KeyspacesRetryOption.KEYSPACES_RETRY_MIN_WAIT, KeyspacesRetryOption.DEFAULT_KEYSPACES_RETRY_MIN_WAIT).toMillis());
+        assertEquals(100, DriverConfigLoader.fromClasspath("exponential-retry-example").getInitialConfig().getDefaultProfile().getDuration(KeyspacesRetryOption.KEYSPACES_RETRY_MAX_WAIT, KeyspacesRetryOption.DEFAULT_KEYSPACES_RETRY_MAX_WAIT).toMillis());
     }
 
 }

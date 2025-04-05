@@ -9,8 +9,8 @@ import com.datastax.oss.driver.api.core.session.ProgrammaticArguments;
 import com.datastax.oss.driver.internal.core.config.typesafe.DefaultProgrammaticDriverConfigLoaderBuilder;
 import com.datastax.oss.driver.internal.core.context.DefaultDriverContext;
 import com.datastax.oss.driver.internal.core.util.collection.QueryPlan;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.Arrays;
 import java.util.Queue;
@@ -24,7 +24,7 @@ public class AmazonKeyspacesLoadbalancingPolicyTest {
         DriverContext context = new DefaultDriverContext(new DefaultProgrammaticDriverConfigLoaderBuilder().build(), ProgrammaticArguments.builder().build());
         AmazonKeyspacesRoundRobinLoadBalancingPolicy st = new AmazonKeyspacesRoundRobinLoadBalancingPolicy(context, "default");
 
-        Assert.assertEquals(QueryPlan.EMPTY, st.newQueryPlan(null, null, new Node[0]));
+        assertEquals(QueryPlan.EMPTY, st.newQueryPlan(null, null, new Node[0]));
     }
     @Test
     public void notEmptyQueryPlanExceed() {
@@ -32,7 +32,7 @@ public class AmazonKeyspacesLoadbalancingPolicyTest {
         DriverContext context = new DefaultDriverContext(new DefaultProgrammaticDriverConfigLoaderBuilder().build(), ProgrammaticArguments.builder().build());
         AmazonKeyspacesRoundRobinLoadBalancingPolicy st = new AmazonKeyspacesRoundRobinLoadBalancingPolicy(context, "default");
 
-        Assert.assertNotEquals(QueryPlan.EMPTY, st.newQueryPlan(null, null, new Node[1]));
+        assertNotEquals(QueryPlan.EMPTY, st.newQueryPlan(null, null, new Node[1]));
 
     }
     @Test
@@ -51,8 +51,8 @@ public class AmazonKeyspacesLoadbalancingPolicyTest {
 
         Queue<Node> queryPlan = st.newQueryPlan(null, null, original);
 
-        Assert.assertTrue(original.length == clone.length);
-        Assert.assertNotEquals(QueryPlan.EMPTY, queryPlan);
+        assertEquals(original.length, clone.length);
+        assertNotEquals(QueryPlan.EMPTY, queryPlan);
 
     }
     @Test
@@ -71,8 +71,8 @@ public class AmazonKeyspacesLoadbalancingPolicyTest {
 
        Queue<Node> queryPlan = st.newQueryPlan(null, null, original);
 
-        Assert.assertFalse(Arrays.deepEquals(original,clone));
-        Assert.assertNotEquals(QueryPlan.EMPTY, queryPlan);
+        assertFalse(Arrays.deepEquals(original,clone));
+        assertNotEquals(QueryPlan.EMPTY, queryPlan);
     }
     @Test
     public void testShuffleAlgorithm() {
@@ -90,13 +90,13 @@ public class AmazonKeyspacesLoadbalancingPolicyTest {
 
         AmazonKeyspacesRoundRobinLoadBalancingPolicy.reverseDurstenfeldShuffle(original, ThreadLocalRandom.current());
 
-        Assert.assertFalse(Arrays.deepEquals(original,clone));
+        assertFalse(Arrays.deepEquals(original,clone));
     }
 
 
     @Test
     public void testConfig() {
-        Assert.assertEquals("us-east-1", DriverConfigLoader.fromClasspath("loadbalancer-example").getInitialConfig().getDefaultProfile().getString(DefaultDriverOption.LOAD_BALANCING_LOCAL_DATACENTER));
+        assertEquals("us-east-1", DriverConfigLoader.fromClasspath("loadbalancer-example").getInitialConfig().getDefaultProfile().getString(DefaultDriverOption.LOAD_BALANCING_LOCAL_DATACENTER));
     }
 
 }

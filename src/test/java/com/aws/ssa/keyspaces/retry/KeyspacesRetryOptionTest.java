@@ -1,18 +1,18 @@
 package com.aws.ssa.keyspaces.retry;
 
 import com.aws.ssa.keyspaces.retry.KeyspacesRetryOption;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class KeyspacesRetryOptionTest {
 
     @Test
     public void testPathMethod() {
-        Assert.assertEquals("advanced.retry-policy.max-attempts", KeyspacesRetryOption.KEYSPACES_RETRY_MAX_ATTEMPTS.getPath());
+        assertEquals("advanced.retry-policy.max-attempts", KeyspacesRetryOption.KEYSPACES_RETRY_MAX_ATTEMPTS.getPath());
     }
 
     @Test
     public void testDefaults() {
-        Assert.assertSame(3, KeyspacesRetryOption.DEFAULT_KEYSPACES_RETRY_MAX_ATTEMPTS);
+        assertSame(3, KeyspacesRetryOption.DEFAULT_KEYSPACES_RETRY_MAX_ATTEMPTS);
     }
 }
